@@ -6,10 +6,10 @@ using ExploreCalifornia.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 
 namespace ExploreCalifornia
@@ -27,13 +27,13 @@ namespace ExploreCalifornia
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddTransient<FormattingService>();
+
             services.AddTransient<FeatureToggles>(x => new FeatureToggles
             {
                 DeveloperExceptions = configuration.GetValue<bool>("FeatureToggles:DeveloperExceptions")
             });
-
-            services.AddMvc(option => option.EnableEndpointRouting = false);
-
 
 
             services.AddDbContext<BlogDataContext>(options =>
@@ -41,7 +41,25 @@ namespace ExploreCalifornia
                 var connectionString = configuration.GetConnectionString("BlogDataContext");
                 options.UseSqlServer(connectionString);
 
-                });
+            });
+
+            services.AddDbContext<IdentityDataContext>(options =>
+            {
+                var connectionString = configuration.GetConnectionString("IdentityDataContext");
+                options.UseSqlServer(connectionString);
+            });
+
+
+            services.AddIdentity<IdentityUser, IdentityRole>()
+                
+                .AddRoleStore<IdentityDataContext>();
+
+            services.AddMvc(option => option.EnableEndpointRouting = false);
+
+
+
+           
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,6 +90,7 @@ namespace ExploreCalifornia
                 await next();
             });
 
+            app.UseAuthentication();
             
             app.UseMvc(routes =>
             {
